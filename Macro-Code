@@ -1,0 +1,73 @@
+************************* Disabling Save in Excel ***************************
+
+Private Sub Workbook_BeforeSave(ByVal SaveAsUI As Boolean, Cancel As Boolean)
+Dim xName As String
+Dim user_option As Integer
+
+Application.DisplayAlerts = False
+xName = "CancelBeforeSave"
+ 
+If Not Evaluate("=ISREF('" & xName & "'!A1)") Then
+    user_option = MsgBox("Hi, Are you sure you want to save and make the tool final?", vbInformation + vbYesNo, "Confirmation")
+    If user_option = 6 Then
+     Sheets.Add(after:=Worksheets(Worksheets.Count)).Name = xName & ""
+    Sheets(xName & "").Move after:=Worksheets(Worksheets.Count)
+    Sheets(xName & "").Visible = xlSheetVeryHidden
+    ThisWorkbook.Sheets("Home").Range("B8:H13").ClearContents
+    Worksheets("Home").Shapes("Picture 16").Visible = False
+    Worksheets("Home").Shapes("Rectangle: Rounded Corners 2").Visible = False
+    Sheets("Approved Position").Visible = False
+    Sheets("Pending Position").Visible = False
+    Sheets("V_POS_JR").Visible = False
+    Sheets("V_POS_WF").Visible = False
+    Sheets("Calculation").Visible = False
+    Sheets("SP_Access_List").Visible = False
+
+    Exit Sub
+    End If
+
+End If
+
+Cancel = True
+
+End Sub
+
+************************* Connecting to SharePoint ***************************
+
+Dim cnt As ADODB.Connection
+Dim rst As ADODB.Recordset
+Dim user_name As String
+
+user_name = UCase(Environ("USERNAME"))
+
+ThisWorkbook.Sheets("SP_Access_List").Range("A1").CurrentRegion.Offset(1, 0).Clear
+
+Dim mysql As String
+
+Set cnt = New ADODB.Connection
+Set rst = New ADODB.Recordset
+
+mysql = "Select [Signum],[Geo Region],[MA BA GF],[Division],[Department],[Country],[Company],[Employee Class],[Status] from [TA_Position_Job_Req_Access_List] WHERE SIGNUM = " & "'" & user_name & "'" & ""
+
+With cnt
+    
+    .ConnectionString = _
+    "Provider=Microsoft.ACE.OLEDB.12.0;WSS;IMEX=0;RetrieveIds=Yes;DATABASE=https://ericsson.sharepoint.com/sites/ReportingAutomation/GFPLPSReporting;LIST={AD9A0B39-A924-4148-8B58-3941912E03C8};"
+    .Open
+
+End With
+
+rst.Open mysql, cnt, adOpenForwardOnly, adLockReadOnly
+
+If Not (rst.BOF And rst.EOF) Then
+
+    Worksheets("SP_Access_List").Cells(2, 1).CopyFromRecordset rst
+    
+End If
+
+If CBool(rst.State And adStateOpen) = True Then rst.Close
+Set rst = Nothing
+If CBool(cnt.State And adStateOpen) = True Then cnt.Close
+Set cnt = Nothing
+
+************************* Connecting to SQL ***************************
