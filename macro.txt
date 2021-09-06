@@ -1,0 +1,11 @@
+ii = Range("A" & Rows.Count).End(xlUp).Row
+
+kk = ActiveSheet.Range("A" & Rows.Count).End(xlUp).Row
+Range("S6:S" & kk).SpecialCells(xlCellTypeVisible).Select
+
+Master.Select
+Range("A3").CurrentRegion.Offset(2, 0).Clear
+
+Application.StatusBar = "         Importing Data"
+
+vbYesNo + vbCritical
