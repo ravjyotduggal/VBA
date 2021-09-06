@@ -71,3 +71,97 @@ If CBool(cnt.State And adStateOpen) = True Then cnt.Close
 Set cnt = Nothing
 
 ************************* Connecting to SQL ***************************
+
+References:- Microsoft ActiveX Data Objects 2.8 Library
+
+******************* Code below ***********************
+
+Dim oconn As ADODB.Connection
+Dim rs As ADODB.Recordset
+Dim fld As ADODB.Field
+Dim mssql As String
+Dim row As Integer
+Dim col As Integer
+Dim ws As ThisWorkbook
+Set ws = ThisWorkbook
+
+Set oconn = New ADODB.Connection
+Set rs = New ADODB.Recordset
+
+'Address Changes Report
+If ThisWorkbook.Sheets("SQL Refresh").Range("F8").Value = "Address Changes Report" Then
+    If ThisWorkbook.Sheets("SQL Refresh").Range("AC7").Value = "EAG" Then
+    mssql = "select [Country Text],[CoCd],[Company Code],[PArea],[Payroll Area],[PERSONID_EXT],[Pers no]," & _
+            "[Last name],[First name],[EEGrp],[Employee Group],[ESgrp],[Employee Subgroup],[RNo],[Address Record Type]," & _
+            "[Infotype],[Subtype],[End date],[Start date],[Chngd on],[Changed by],[CO name],[Supplier Address (ZD1 Care Of)]," & _
+            "[Street and house number],[City],[District],[Postal code],[Country key],[Telephone no],[Kms],[Bus],[2nd address line]," & _
+            "[Street 2],[Street 3],[Region (State Province Count)],[House],[Aptmt],[Municipal city code],[County Code]," & _
+            "[Indicator for relationship (sp)],[Number],[Type],[Street Abbreviation],[Floor],[Buildings],[CH],[City (Katakana)]," & _
+            "[City Distr (Katakana)] , [Contact person (katakana)], [Kms1]" & _
+            "from T_PAY_Address_Changes " & _
+    "where [Company Code] = 'EAG' and [Chngd on]>=" & ThisWorkbook.Sheets("SQL Refresh").Range("AF8").Value & " and " & _
+    "[Chngd on]<= " & ThisWorkbook.Sheets("SQL Refresh").Range("AF9").Value & _
+    " and EEGrp In (1,2,3,4,5,6,7) and PArea<>'X9'"
+    
+    ThisWorkbook.Sheets("SQL_Data").Activate
+Cells.EntireColumn.Clear
+
+oconn.ConnectionString = "driver={SQL Server};" & _
+"server=innow43;authenticateduser= True;database=HRGO_REPORTING"
+
+oconn.ConnectionTimeout = 30
+oconn.Open
+
+rs.Open mssql, oconn
+
+'Range("A1").Value = mssql
+
+If rs.EOF Then
+'MsgBox "No Matching Record Found", vbCritical, "No Data Imported"
+
+row = 1
+col = 1
+
+    For Each fld In rs.Fields
+    Sheets("SQL_Data").Cells(row, col).Value = fld.Name
+    col = col + 1
+    Next
+
+rs.Close
+oconn.Close
+Worksheets("SQL Refresh").Activate
+Exit Sub
+End If
+
+row = 1
+col = 1
+
+    For Each fld In rs.Fields
+    Sheets("SQL_Data").Cells(row, col).Value = fld.Name
+    col = col + 1
+    Next
+    
+rs.MoveFirst
+
+row = row + 1
+
+Do While Not rs.EOF
+
+col = 1
+
+For Each fld In rs.Fields
+Sheets("SQL_Data").Cells(row, col).Value = fld.Value
+col = col + 1
+Next
+
+row = row + 1
+
+rs.MoveNext
+
+Loop
+
+rs.Close
+oconn.Close
+
+ThisWorkbook.Sheets("SQL Refresh").Activate
+
